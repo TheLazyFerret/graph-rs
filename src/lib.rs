@@ -7,11 +7,11 @@
 use core::fmt;
 
 // (destiny, weight)
-type Edge = (u8, i32);
+type Edge = (usize, i32);
 
 #[derive(Default)]
 pub struct Graph {
-  adjacency_list: Vec<Vec<Edge>>,
+  adjacency_list: Vec<Option<Vec<Edge>>>,
   is_directed: bool,
 }
 
@@ -23,14 +23,58 @@ impl Graph {
       ..Default::default()
     }
   }
+
+  /// Add a vertex to the graph. Returns Error if it is duplicated.
+  pub fn add_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
+    if self.adjacency_list.len() <= vertex {
+      self.adjacency_list.resize(vertex + 1, None);
+    }
+    if self.adjacency_list[vertex].is_none() {
+      self.adjacency_list[vertex] = Some(Vec::new());
+      Ok(())
+    } else {
+      Err(GraphError::VertexDuplication)
+    }
+  }
 } // impl Graph
+
+impl fmt::Display for Graph {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    for (indx, adj) in self.adjacency_list.iter().enumerate() {
+      if adj.is_some() {
+        writeln!(f, "{} -> {:?}", indx, adj.clone().unwrap())?;
+      }
+    }
+    Ok(())
+  }
+}
 
 /// Enum representing all possible errors
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Error {}
+pub enum GraphError {
+  VertexNotExist,
+  VertexDuplication,
+}
 
-impl fmt::Display for Error {
+impl fmt::Debug for GraphError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    todo!()
+    match self {
+      | Self::VertexNotExist => write!(f, "Trying to access a vertex non-existent"),
+      | Self::VertexDuplication => write!(f, "Trying to create the same vertex two times"),
+    }
+  }
+}
+
+
+#[cfg(test)]
+mod graph_test {
+    use crate::Graph;
+
+  #[test]
+  fn print_test() {
+    let mut x = Graph::new(false);
+    x.add_vertex(0).unwrap();
+    x.add_vertex(1).unwrap();
+    println!("{}", x);
   }
 }
