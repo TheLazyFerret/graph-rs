@@ -57,18 +57,18 @@ impl Graph {
 
   /// Checks if a edge exist. It also double check in not directed, done for debugging purposes
   fn edge_exist(&self, origin: usize, destiny: usize) -> bool {
-    assert!(self.vertex_exist(origin) && self.vertex_exist(destiny));
+    debug_assert!(self.vertex_exist(origin) && self.vertex_exist(destiny));
     let origin_to_destiny = self.adjacency_list[origin]
       .as_ref()
       .unwrap()
       .iter()
-      .find(|x| x.0 == destiny)
+      .position(|x| x.0 == destiny)
       .is_some();
     let destiny_to_origin = self.adjacency_list[destiny]
       .as_ref()
       .unwrap()
       .iter()
-      .find(|x| x.0 == origin)
+      .position(|x| x.0 == origin)
       .is_some();
     if self.is_directed {
       origin_to_destiny
