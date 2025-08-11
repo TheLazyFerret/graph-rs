@@ -163,4 +163,19 @@ mod graph_test {
     x.add_edge(0, 4, 500).expect("error adding second edge");
     println!("{}", x);
   }
-}
+
+  #[test]
+  fn find_edge_test() {
+    let mut x = Graph::new(true);
+    x.add_vertex(0).expect("error first add");
+    x.add_vertex(1).expect("error second add");
+    x.add_vertex(4).expect("error third add");
+
+    x.add_edge(0, 1, 100).expect("error adding first edge");
+    x.add_edge(0, 4, 500).expect("error adding second edge");
+
+    assert!(x.edge_exist(0, 1));
+    assert!(x.edge_exist(0, 4));
+    assert!(!x.edge_exist(1, 4));
+  }
+} // mod graph_test
