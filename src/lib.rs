@@ -15,6 +15,7 @@ pub struct Graph {
   is_directed: bool,
 }
 
+/// Public interface
 impl Graph {
   /// Creates a new instance of the struct
   pub fn new(is_directed: bool) -> Self {
@@ -37,15 +38,72 @@ impl Graph {
     }
   }
 
-  /// Add an edge to the Grah
-  pub fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
-    if self.is_directed {
-      self.add_directed_edge(origin, destiny, weight)
-    } else {
-      self.add_not_directed_edge(origin, destiny, weight)
+  pub fn update_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+    if !self.edge_exist(origin, destiny) {
+      self.add_edge(origin, destiny, weight)
+    }
+    else {
+      self.modify_edge(origin, destiny, weight)
     }
   }
 
+} // Public interface
+
+/// Private interface
+impl Graph {
+  /// Add a non existant edge
+  fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+    debug_assert!(!self.edge_exist(origin, destiny));
+    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
+      Err(GraphError::VertexNotExist)
+    } else if self.is_directed {
+      self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
+      Ok(())
+    } else {
+      // a to b
+      self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
+      // b to a
+      self.adjacency_list[destiny].as_mut().unwrap().push((origin, weight));
+      Ok(())
+    }
+  }
+  /// Update an already existant edge
+  fn modify_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
+      return Err(GraphError::VertexNotExist);
+    }
+    if !self.edge_exist(origin, destiny) {
+      return Err(GraphError::EdgeNotExist);
+    }
+    if self.is_directed {
+      self.adjacency_list[origin]
+        .as_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|x| x.0 == destiny)
+        .unwrap()
+        .1 = weight;
+      Ok(())
+    } else {
+      // origin to destiny
+      self.adjacency_list[origin]
+        .as_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|x| x.0 == destiny)
+        .unwrap()
+        .1 = weight;
+      // destiny to origin
+      self.adjacency_list[destiny]
+        .as_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|x| x.0 == origin)
+        .unwrap()
+        .1 = weight;
+      Ok(())
+    }
+  }
   /// Checks if a vertex exists in the graph
   fn vertex_exist(&self, vertex: usize) -> bool {
     if self.adjacency_list.len() < vertex {
@@ -55,7 +113,7 @@ impl Graph {
     }
   }
 
-  /// Checks if a edge exist. It also double check in not directed, done for debugging purposes
+  /// Checks if a edge exist. It also double check when not directed, done for debugging purposes
   fn edge_exist(&self, origin: usize, destiny: usize) -> bool {
     debug_assert!(self.vertex_exist(origin) && self.vertex_exist(destiny));
     let origin_to_destiny = self.adjacency_list[origin]
@@ -76,41 +134,7 @@ impl Graph {
       origin_to_destiny && destiny_to_origin
     }
   }
-
-  /// Adds a directed edge to the Graph
-  fn add_directed_edge(
-    &mut self, origin: usize, destiny: usize, weight: i32,
-  ) -> Result<(), GraphError> {
-    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
-      Err(GraphError::VertexNotExist)
-    } else {
-      self.adjacency_list[origin]
-        .as_mut()
-        .unwrap()
-        .push((destiny, weight));
-      Ok(())
-    }
-  }
-
-  /// Adds a not directed edge (or two not directed edges) to the graph
-  fn add_not_directed_edge(
-    &mut self, origin: usize, destiny: usize, weight: i32,
-  ) -> Result<(), GraphError> {
-    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
-      Err(GraphError::VertexNotExist)
-    } else {
-      self.adjacency_list[origin]
-        .as_mut()
-        .unwrap()
-        .push((destiny, weight));
-      self.adjacency_list[destiny]
-        .as_mut()
-        .unwrap()
-        .push((origin, weight));
-      Ok(())
-    }
-  }
-} // impl Graph
+} // Private interface
 
 impl fmt::Display for Graph {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -127,6 +151,7 @@ impl fmt::Display for Graph {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum GraphError {
   VertexNotExist,
+  EdgeNotExist,
   VertexDuplication,
 }
 
@@ -135,6 +160,7 @@ impl fmt::Debug for GraphError {
     match self {
       | Self::VertexNotExist => write!(f, "Trying to access a vertex non-existent"),
       | Self::VertexDuplication => write!(f, "Trying to create the same vertex two times"),
+      | Self::EdgeNotExist => write!(f, "Trying to access a edge non-existent"),
     }
   }
 }
@@ -159,9 +185,8 @@ mod graph_test {
     x.add_vertex(1).expect("error second add");
     x.add_vertex(4).expect("error third add");
 
-    x.add_edge(0, 1, 100).expect("error adding first edge");
-    x.add_edge(0, 4, 500).expect("error adding second edge");
-    println!("{}", x);
+    x.update_edge(0, 1, 100).expect("error adding first edge");
+    x.update_edge(0, 4, 500).expect("error adding second edge");
   }
 
   #[test]
@@ -171,11 +196,26 @@ mod graph_test {
     x.add_vertex(1).expect("error second add");
     x.add_vertex(4).expect("error third add");
 
-    x.add_edge(0, 1, 100).expect("error adding first edge");
-    x.add_edge(0, 4, 500).expect("error adding second edge");
+    x.update_edge(0, 1, 100).expect("error adding first edge");
+    x.update_edge(0, 4, 500).expect("error adding second edge");
 
     assert!(x.edge_exist(0, 1));
     assert!(x.edge_exist(0, 4));
     assert!(!x.edge_exist(1, 4));
+  }
+
+  #[test]
+  fn modify_edge_test() {
+    let mut x = Graph::new(false);
+    x.add_vertex(0).expect("error first add");
+    x.add_vertex(1).expect("error second add");
+    x.add_vertex(4).expect("error third add");
+
+    x.update_edge(0, 1, 100).expect("error adding first edge");
+    x.update_edge(0, 4, 500).expect("error adding second edge");
+
+    x.update_edge(0, 1, 5).expect("error modifying edge");
+
+    println!("{}", x);
   }
 } // mod graph_test
