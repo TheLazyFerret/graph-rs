@@ -36,6 +36,80 @@ impl Graph {
       Err(GraphError::VertexDuplication)
     }
   }
+
+  /// Add an edge to the Grah
+  pub fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+    if self.is_directed {
+      self.add_directed_edge(origin, destiny, weight)
+    } else {
+      self.add_not_directed_edge(origin, destiny, weight)
+    }
+  }
+
+  /// Checks if a vertex exists in the graph
+  fn vertex_exist(&self, vertex: usize) -> bool {
+    if self.adjacency_list.len() < vertex {
+      false
+    } else {
+      self.adjacency_list[vertex].is_some()
+    }
+  }
+
+  /// Checks if a edge exist. It also double check in not directed, done for debugging purposes
+  fn edge_exist(&self, origin: usize, destiny: usize) -> bool {
+    assert!(self.vertex_exist(origin) && self.vertex_exist(destiny));
+    let origin_to_destiny = self.adjacency_list[origin]
+      .as_ref()
+      .unwrap()
+      .iter()
+      .find(|x| x.0 == destiny)
+      .is_some();
+    let destiny_to_origin = self.adjacency_list[destiny]
+      .as_ref()
+      .unwrap()
+      .iter()
+      .find(|x| x.0 == origin)
+      .is_some();
+    if self.is_directed {
+      origin_to_destiny
+    } else {
+      origin_to_destiny && destiny_to_origin
+    }
+  }
+
+  /// Adds a directed edge to the Graph
+  fn add_directed_edge(
+    &mut self, origin: usize, destiny: usize, weight: i32,
+  ) -> Result<(), GraphError> {
+    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
+      Err(GraphError::VertexNotExist)
+    } else {
+      self.adjacency_list[origin]
+        .as_mut()
+        .unwrap()
+        .push((destiny, weight));
+      Ok(())
+    }
+  }
+
+  /// Adds a not directed edge (or two not directed edges) to the graph
+  fn add_not_directed_edge(
+    &mut self, origin: usize, destiny: usize, weight: i32,
+  ) -> Result<(), GraphError> {
+    if !self.vertex_exist(origin) || !self.vertex_exist(destiny) {
+      Err(GraphError::VertexNotExist)
+    } else {
+      self.adjacency_list[origin]
+        .as_mut()
+        .unwrap()
+        .push((destiny, weight));
+      self.adjacency_list[destiny]
+        .as_mut()
+        .unwrap()
+        .push((origin, weight));
+      Ok(())
+    }
+  }
 } // impl Graph
 
 impl fmt::Display for Graph {
@@ -65,16 +139,28 @@ impl fmt::Debug for GraphError {
   }
 }
 
-
 #[cfg(test)]
 mod graph_test {
-    use crate::Graph;
+  use crate::Graph;
 
   #[test]
-  fn print_test() {
+  fn add_vertex_test() {
     let mut x = Graph::new(false);
-    x.add_vertex(0).unwrap();
-    x.add_vertex(1).unwrap();
+    x.add_vertex(0).expect("error first add");
+    x.add_vertex(1).expect("error second add");
+    x.add_vertex(1).expect_err("not error found at third");
+    x.add_vertex(50).expect("error third add");
+  }
+
+  #[test]
+  fn add_edge_test() {
+    let mut x = Graph::new(false);
+    x.add_vertex(0).expect("error first add");
+    x.add_vertex(1).expect("error second add");
+    x.add_vertex(4).expect("error third add");
+
+    x.add_edge(0, 1, 100).expect("error adding first edge");
+    x.add_edge(0, 4, 500).expect("error adding second edge");
     println!("{}", x);
   }
 }
