@@ -12,3 +12,7 @@ tab_spaces = 2
 match_arm_leading_pipes = "Always"
 # Put a comma after each match statement.
 match_block_trailing_comma = true
+# Avoid splitting multiple methods call.
+use_small_heuristics = "Max"
+# Always split an if else statement in multiple lines
+single_line_if_else_max_width = 0
