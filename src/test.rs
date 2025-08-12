@@ -55,3 +55,24 @@ fn modify_edge_test() {
 
   println!("{}", x);
 }
+
+#[test]
+fn delete_vertex() {
+  let mut x = Graph::new(false);
+  x.add_vertex(0).expect("error first add");
+  x.add_vertex(1).expect("error second add");
+  x.add_vertex(4).expect("error third add");
+
+  x.update_edge(0, 1, 100).expect("error adding first edge");
+  x.update_edge(0, 4, 500).expect("error adding second edge");
+
+  x.update_edge(0, 1, 5).expect("error modifying edge");
+
+  x.clean_vertex(0);
+  assert!(!x.vertex_exists(0));
+  println!("{}", x);
+
+  x.clean_vertex(1);
+  assert!(!x.vertex_exists(1));
+  println!("{}", x);
+}

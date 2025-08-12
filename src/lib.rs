@@ -53,7 +53,7 @@ impl Graph {
 impl Graph {
   /// Checks if a vertex exists in the graph
   fn vertex_exists(&self, vertex: usize) -> bool {
-    if self.adjacency_list.len() < vertex {
+    if self.adjacency_list.len() <= vertex {
       false
     } else {
       self.adjacency_list[vertex].is_some()
@@ -118,6 +118,15 @@ impl Graph {
       // destiny to origin
       self.adjacency_list[destiny].as_mut().unwrap().iter_mut().find(|x| x.0 == origin).unwrap().1 = weight;
       Ok(())
+    }
+  }
+
+  /// Removes a vertex, and all the edges relates.
+  fn clean_vertex(&mut self, vertex: usize) {
+    debug_assert!(self.vertex_exists(vertex));
+    self.adjacency_list[vertex] = None;
+    for adj in self.adjacency_list.iter_mut().filter_map(|x| x.as_mut()){
+      adj.retain(|x| x.0 != vertex);
     }
   }
 }
