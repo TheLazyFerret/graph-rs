@@ -22,8 +22,9 @@ pub struct Graph {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum GraphError {
   VertexNotExist,
-  EdgeNotExist,
   VertexDuplication,
+  EdgeNotExist, 
+  EdgeDuplication,
 }
 
 /// PUBLIC INTERFACE
@@ -35,15 +36,49 @@ impl Graph {
 
   /// Add a vertex to the graph. Returns Error if it is duplicated.
   pub fn insert_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
-    self.add_vertex(vertex)
+    if self.vertex_exists(vertex) {
+      Err(GraphError::VertexDuplication)
+    } 
+    else {
+      self.add_vertex(vertex);
+      Ok(())
+    }
   }
 
   /// Add the edge, if it already exists, update its weight.
+  pub fn insert_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+    if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
+      Err(GraphError::VertexNotExist)
+    }
+    else if self.edge_exists(origin, destiny) {
+      Err(GraphError::EdgeDuplication)
+    }
+    else {
+      self.add_edge(origin, destiny, weight);
+      Ok(())
+    }
+  }
+
   pub fn update_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
-    if !self.edge_exists(origin, destiny) {
-      self.add_edge(origin, destiny, weight)
-    } else {
-      self.modify_edge(origin, destiny, weight)
+    if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
+      Err(GraphError::VertexNotExist)
+    }
+    else if !self.edge_exists(origin, destiny) {
+      Err(GraphError::EdgeNotExist)
+    }
+    else {
+      self.modify_edge(origin, destiny, weight);
+      Ok(())
+    }
+  }
+
+  pub fn remove_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
+    if !self.vertex_exists(vertex) {
+      Err(GraphError::VertexNotExist)
+    }
+    else {
+      self.clean_vertex(vertex);
+      Ok(())
     }
   }
 }
@@ -73,51 +108,38 @@ impl Graph {
   }
 
   /// Add a vertex. If already exist, returns Err(GraphError::VertexDuplication)
-  fn add_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
-    if self.vertex_exists(vertex) {
-      Err(GraphError::VertexDuplication)
-    } else {
-      if self.adjacency_list.len() <= vertex {
-        self.adjacency_list.resize(vertex + 1, None);
-      }
-      self.adjacency_list[vertex] = Some(Vec::new());
-      Ok(())
+  fn add_vertex(&mut self, vertex: usize) {
+    debug_assert!(!self.vertex_exists(vertex));
+    if self.adjacency_list.len() <= vertex {
+      self.adjacency_list.resize(vertex + 1, None);
     }
+    self.adjacency_list[vertex] = Some(Vec::new());
   }
 
   /// Add a non existant edge
-  fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
+  fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) {
+    debug_assert!(self.vertex_exists(origin) && self.vertex_exists(destiny));
     debug_assert!(!self.edge_exists(origin, destiny));
-    if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
-      Err(GraphError::VertexNotExist)
-    } else if self.is_directed {
+    if self.is_directed {
       self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
-      Ok(())
     } else {
       // a to b
       self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
       // b to a
       self.adjacency_list[destiny].as_mut().unwrap().push((origin, weight));
-      Ok(())
     }
   }
   /// Update an already existant edge
-  fn modify_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
-    if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
-      return Err(GraphError::VertexNotExist);
-    }
-    if !self.edge_exists(origin, destiny) {
-      return Err(GraphError::EdgeNotExist);
-    }
+  fn modify_edge(&mut self, origin: usize, destiny: usize, weight: i32) {
+    debug_assert!(self.vertex_exists(origin) && self.vertex_exists(destiny));
+    debug_assert!(self.edge_exists(origin, destiny));
     if self.is_directed {
       self.adjacency_list[origin].as_mut().unwrap().iter_mut().find(|x| x.0 == destiny).unwrap().1 = weight;
-      Ok(())
     } else {
       // origin to destiny
       self.adjacency_list[origin].as_mut().unwrap().iter_mut().find(|x| x.0 == destiny).unwrap().1 = weight;
       // destiny to origin
       self.adjacency_list[destiny].as_mut().unwrap().iter_mut().find(|x| x.0 == origin).unwrap().1 = weight;
-      Ok(())
     }
   }
 
@@ -147,8 +169,9 @@ impl fmt::Debug for GraphError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       | Self::VertexNotExist => write!(f, "Trying to access a vertex non-existent"),
-      | Self::VertexDuplication => write!(f, "Trying to create the same vertex two times"),
+      | Self::VertexDuplication => write!(f, "Trying to insert the same vertex two times"),
       | Self::EdgeNotExist => write!(f, "Trying to access a edge non-existent"),
+      | Self::EdgeDuplication => write!(f, "Trying to insert the same edge two times")
     }
   }
 }

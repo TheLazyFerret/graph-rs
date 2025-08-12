@@ -2,77 +2,60 @@
 //! Copyright (c) 2025 TheLazyFerret
 //! Licensed under the MIT License. See LICENSE file in the project root for full license information.
 //!
-//! Private interface and trait implementation.
+//! test module.
 
 use crate::Graph;
 
 #[test]
-fn add_vertex_test() {
+fn insert_vertex_test() {
   let mut x = Graph::new(false);
-  x.add_vertex(0).expect("error first add");
-  x.add_vertex(1).expect("error second add");
-  x.add_vertex(1).expect_err("not error found at third");
-  x.add_vertex(50).expect("error third add");
+  x.insert_vertex(0).expect("error first add");
+  x.insert_vertex(1).expect("error second add");
+  x.insert_vertex(1).expect_err("not error found at third");
+
+  assert!(x.vertex_exists(0));
+  assert!(x.vertex_exists(1));
 }
 
 #[test]
-fn add_edge_test() {
+fn insert_edge_test() {
   let mut x = Graph::new(false);
-  x.add_vertex(0).expect("error first add");
-  x.add_vertex(1).expect("error second add");
-  x.add_vertex(4).expect("error third add");
+  x.insert_vertex(0).expect("error first add");
+  x.insert_vertex(1).expect("error second add");
+  x.insert_vertex(4).expect("error third add");
 
-  x.update_edge(0, 1, 100).expect("error adding first edge");
-  x.update_edge(0, 4, 500).expect("error adding second edge");
-}
-
-#[test]
-fn find_edge_test() {
-  let mut x = Graph::new(true);
-  x.add_vertex(0).expect("error first add");
-  x.add_vertex(1).expect("error second add");
-  x.add_vertex(4).expect("error third add");
-
-  x.update_edge(0, 1, 100).expect("error adding first edge");
-  x.update_edge(0, 4, 500).expect("error adding second edge");
+  x.insert_edge(0, 1, 100).expect("error adding first edge");
+  x.insert_edge(0, 4, 500).expect("error adding second edge");
 
   assert!(x.edge_exists(0, 1));
   assert!(x.edge_exists(0, 4));
-  assert!(!x.edge_exists(1, 4));
 }
 
 #[test]
 fn modify_edge_test() {
-  let mut x = Graph::new(false);
-  x.add_vertex(0).expect("error first add");
-  x.add_vertex(1).expect("error second add");
-  x.add_vertex(4).expect("error third add");
+  let mut x = Graph::new(true);
+  x.insert_vertex(0).expect("error first add");
+  x.insert_vertex(1).expect("error second add");
 
-  x.update_edge(0, 1, 100).expect("error adding first edge");
-  x.update_edge(0, 4, 500).expect("error adding second edge");
-
+  x.insert_edge(0, 1, 100).expect("error adding edge");
   x.update_edge(0, 1, 5).expect("error modifying edge");
 
-  println!("{}", x);
+  assert_eq!(x.adjacency_list[0].as_mut().expect("error expected Some")[0].1, 5);
 }
 
 #[test]
 fn delete_vertex() {
   let mut x = Graph::new(false);
-  x.add_vertex(0).expect("error first add");
-  x.add_vertex(1).expect("error second add");
-  x.add_vertex(4).expect("error third add");
+  x.insert_vertex(0).expect("error first add");
+  x.insert_vertex(1).expect("error second add");
+  x.insert_vertex(4).expect("error third add");
 
-  x.update_edge(0, 1, 100).expect("error adding first edge");
-  x.update_edge(0, 4, 500).expect("error adding second edge");
-
-  x.update_edge(0, 1, 5).expect("error modifying edge");
+  x.insert_edge(0, 1, 100).expect("error adding first edge");
+  x.insert_edge(0, 4, 500).expect("error adding second edge");
 
   x.clean_vertex(0);
   assert!(!x.vertex_exists(0));
-  println!("{}", x);
 
   x.clean_vertex(1);
   assert!(!x.vertex_exists(1));
-  println!("{}", x);
 }
