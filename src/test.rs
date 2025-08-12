@@ -44,7 +44,7 @@ fn modify_edge_test() {
 }
 
 #[test]
-fn delete_vertex() {
+fn delete_vertex_test() {
   let mut x = Graph::new(false);
   x.insert_vertex(0).expect("error first add");
   x.insert_vertex(1).expect("error second add");
@@ -58,4 +58,19 @@ fn delete_vertex() {
 
   x.clean_vertex(1);
   assert!(!x.vertex_exists(1));
+}
+
+#[test]
+fn delete_edge_test() {
+  let mut x = Graph::new(false);
+
+  x.insert_vertex(0).expect("error first add");
+  x.insert_vertex(1).expect("error second add");
+  x.insert_vertex(4).expect("error third add");
+
+  x.insert_edge(0, 1, 100).expect("error adding first edge");
+  x.insert_edge(0, 4, 500).expect("error adding second edge");
+
+  x.clean_edge(0, 1);
+  assert!(!x.edge_exists(0, 1));
 }

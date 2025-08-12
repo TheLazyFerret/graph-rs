@@ -23,7 +23,7 @@ pub struct Graph {
 pub enum GraphError {
   VertexNotExist,
   VertexDuplication,
-  EdgeNotExist, 
+  EdgeNotExist,
   EdgeDuplication,
 }
 
@@ -38,8 +38,7 @@ impl Graph {
   pub fn insert_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
     if self.vertex_exists(vertex) {
       Err(GraphError::VertexDuplication)
-    } 
-    else {
+    } else {
       self.add_vertex(vertex);
       Ok(())
     }
@@ -49,35 +48,44 @@ impl Graph {
   pub fn insert_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
     if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
       Err(GraphError::VertexNotExist)
-    }
-    else if self.edge_exists(origin, destiny) {
+    } else if self.edge_exists(origin, destiny) {
       Err(GraphError::EdgeDuplication)
-    }
-    else {
+    } else {
       self.add_edge(origin, destiny, weight);
       Ok(())
     }
   }
 
+  /// Update the weight of a edge.
   pub fn update_edge(&mut self, origin: usize, destiny: usize, weight: i32) -> Result<(), GraphError> {
     if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
       Err(GraphError::VertexNotExist)
-    }
-    else if !self.edge_exists(origin, destiny) {
+    } else if !self.edge_exists(origin, destiny) {
       Err(GraphError::EdgeNotExist)
-    }
-    else {
+    } else {
       self.modify_edge(origin, destiny, weight);
       Ok(())
     }
   }
 
+  /// remove a vertex and all possible directed connected edges.
   pub fn remove_vertex(&mut self, vertex: usize) -> Result<(), GraphError> {
     if !self.vertex_exists(vertex) {
       Err(GraphError::VertexNotExist)
-    }
-    else {
+    } else {
       self.clean_vertex(vertex);
+      Ok(())
+    }
+  }
+
+  /// remove an edge from the graph.
+  pub fn remove_edge(&mut self, origin: usize, destiny: usize) -> Result<(), GraphError> {
+    if !self.vertex_exists(origin) || !self.vertex_exists(destiny) {
+      Err(GraphError::VertexNotExist)
+    } else if !self.edge_exists(origin, destiny) {
+      Err(GraphError::EdgeDuplication)
+    } else {
+      self.clean_edge(origin, destiny);
       Ok(())
     }
   }
@@ -103,7 +111,8 @@ impl Graph {
     if self.is_directed {
       origin_to_destiny
     } else {
-      origin_to_destiny && destiny_to_origin
+      debug_assert!(origin_to_destiny == destiny_to_origin);
+      origin_to_destiny || destiny_to_origin
     }
   }
 
@@ -147,8 +156,28 @@ impl Graph {
   fn clean_vertex(&mut self, vertex: usize) {
     debug_assert!(self.vertex_exists(vertex));
     self.adjacency_list[vertex] = None;
-    for adj in self.adjacency_list.iter_mut().filter_map(|x| x.as_mut()){
+    for adj in self.adjacency_list.iter_mut().filter_map(|x| x.as_mut()) {
       adj.retain(|x| x.0 != vertex);
+    }
+  }
+
+  /// Removes a edge.
+  fn clean_edge(&mut self, origin: usize, destiny: usize) {
+    debug_assert!(self.vertex_exists(origin) && self.vertex_exists(destiny));
+    debug_assert!(self.edge_exists(origin, destiny));
+    if self.is_directed {
+      let index = // vector position of the edge
+        self.adjacency_list[origin].as_ref().unwrap().iter().enumerate().find(|x| x.1.0 == destiny).unwrap().0;
+      self.adjacency_list[origin].as_mut().unwrap().swap_remove(index);
+    } else {
+      // a to b
+      let ori_index = // vector position of the origin to destiny edge
+        self.adjacency_list[origin].as_ref().unwrap().iter().enumerate().find(|x| x.1.0 == destiny).unwrap().0;
+      self.adjacency_list[origin].as_mut().unwrap().swap_remove(ori_index);
+      // b to a
+      let des_index = // vector position of the destiny to origin edge
+        self.adjacency_list[destiny].as_ref().unwrap().iter().enumerate().find(|x| x.1.0 == origin).unwrap().0;
+      self.adjacency_list[destiny].as_mut().unwrap().swap_remove(des_index);
     }
   }
 }
@@ -171,7 +200,7 @@ impl fmt::Debug for GraphError {
       | Self::VertexNotExist => write!(f, "Trying to access a vertex non-existent"),
       | Self::VertexDuplication => write!(f, "Trying to insert the same vertex two times"),
       | Self::EdgeNotExist => write!(f, "Trying to access a edge non-existent"),
-      | Self::EdgeDuplication => write!(f, "Trying to insert the same edge two times")
+      | Self::EdgeDuplication => write!(f, "Trying to insert the same edge two times"),
     }
   }
 }
