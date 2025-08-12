@@ -25,6 +25,7 @@ pub enum GraphError {
   VertexDuplication,
   EdgeNotExist,
   EdgeDuplication,
+  EdgeLoop,
 }
 
 /// PUBLIC INTERFACE
@@ -50,6 +51,8 @@ impl Graph {
       Err(GraphError::VertexNotExist)
     } else if self.edge_exists(origin, destiny) {
       Err(GraphError::EdgeDuplication)
+    } else if origin == destiny {
+      Err(GraphError::EdgeLoop)
     } else {
       self.add_edge(origin, destiny, weight);
       Ok(())
@@ -96,7 +99,8 @@ impl Graph {
 impl Graph {
   /// Checks if a vertex exists in the graph
   fn vertex_exists(&self, vertex: usize) -> bool {
-    if self.adjacency_list.len() <= vertex { // must be atleast n + 1
+    if self.adjacency_list.len() <= vertex {
+      // must be atleast n + 1
       false
     } else {
       self.adjacency_list[vertex].is_some()
@@ -131,6 +135,7 @@ impl Graph {
   fn add_edge(&mut self, origin: usize, destiny: usize, weight: i32) {
     debug_assert!(self.vertex_exists(origin) && self.vertex_exists(destiny));
     debug_assert!(!self.edge_exists(origin, destiny));
+    debug_assert!(origin != destiny);
     if self.is_directed {
       self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
     } else {
@@ -204,6 +209,7 @@ impl fmt::Debug for GraphError {
       | Self::VertexDuplication => write!(f, "Trying to insert the same vertex two times"),
       | Self::EdgeNotExist => write!(f, "Trying to access a edge non-existent"),
       | Self::EdgeDuplication => write!(f, "Trying to insert the same edge two times"),
+      | Self::EdgeLoop => write!(f, "Trying to add a edge loop"),
     }
   }
 }
