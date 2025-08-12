@@ -12,7 +12,7 @@ use core::fmt;
 // (destiny, weight)
 type Edge = (usize, i32);
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Graph {
   adjacency_list: Vec<Option<Vec<Edge>>>,
   is_directed: bool,
@@ -96,7 +96,7 @@ impl Graph {
 impl Graph {
   /// Checks if a vertex exists in the graph
   fn vertex_exists(&self, vertex: usize) -> bool {
-    if self.adjacency_list.len() <= vertex {
+    if self.adjacency_list.len() <= vertex { // must be atleast n + 1
       false
     } else {
       self.adjacency_list[vertex].is_some()
@@ -111,6 +111,7 @@ impl Graph {
     if self.is_directed {
       origin_to_destiny
     } else {
+      // If there is no error, this assert will never trigger.
       debug_assert!(origin_to_destiny == destiny_to_origin);
       origin_to_destiny || destiny_to_origin
     }
@@ -120,6 +121,7 @@ impl Graph {
   fn add_vertex(&mut self, vertex: usize) {
     debug_assert!(!self.vertex_exists(vertex));
     if self.adjacency_list.len() <= vertex {
+      // for insert the vex n, the vector must be atleast n + 1
       self.adjacency_list.resize(vertex + 1, None);
     }
     self.adjacency_list[vertex] = Some(Vec::new());
@@ -132,9 +134,9 @@ impl Graph {
     if self.is_directed {
       self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
     } else {
-      // a to b
+      // origin to destiny
       self.adjacency_list[origin].as_mut().unwrap().push((destiny, weight));
-      // b to a
+      // destiny to origin
       self.adjacency_list[destiny].as_mut().unwrap().push((origin, weight));
     }
   }
@@ -155,7 +157,8 @@ impl Graph {
   /// Removes a vertex, and all the edges relates.
   fn clean_vertex(&mut self, vertex: usize) {
     debug_assert!(self.vertex_exists(vertex));
-    self.adjacency_list[vertex] = None;
+    self.adjacency_list[vertex] = None; // removes all the edge originated from the vertex
+    // removes all the edges with destiny to the vertex
     for adj in self.adjacency_list.iter_mut().filter_map(|x| x.as_mut()) {
       adj.retain(|x| x.0 != vertex);
     }
